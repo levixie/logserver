@@ -16,9 +16,6 @@ def main():
     parser.add_argument('-b', '--bind', dest='host',
                         metavar='ADDR',
                         help='IP addr or hostname to bind to')
-    parser.add_argument('-h', '--host', dest='host', type=str,
-                        metavar='HOST',
-                        help='host to bind to')
     parser.add_argument('-p', '--port', dest='port', type=int,
                         metavar='PORT',
                         help='port to bind to')

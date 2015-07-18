@@ -4,7 +4,7 @@ import logging
 import logging.handlers
 
 import os
-from common.log_handlers import SimpleSocketHandler, SimpleThriftHandler
+from log_handlers import SimpleSocketHandler, SimpleThriftHandler
 
 
 def mlevel(level):
