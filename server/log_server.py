@@ -32,7 +32,7 @@ def main():
     args = parser.parse_args()
 
     global logger
-    logger = slogger.setUpLogger(args.logdir, 'logserver', args.loglevel)
+    logger = slogger.get_logger(args.logdir, 'logserver', args.loglevel)
 
     if args.use_thrift:
         from common.thrift_gen.log_record import LogCollector
