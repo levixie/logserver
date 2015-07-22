@@ -1,5 +1,5 @@
 # logserver
-just a simple python logserver
+just a simple python logserver with counter
 
 there are two different implementations
 1. simple tcp/unix socket

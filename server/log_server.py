@@ -4,9 +4,13 @@ import logging
 import logging.handlers
 import argparse
 
+import Queue
 from common import slogger
 from server.log_receivers import LogRecordTCPSocketReceiver, LogRecordUnixSocketReceiver, set_log_dir
 from thrift_handlers import LogCollectorHandler
+
+from perf_collector import PerfCollector, PerfSender
+from gmetric_sender import GMetricSender
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +32,9 @@ def main():
     parser.add_argument('--thrift', dest='use_thrift',
                         metavar='THRIFT', default=True,
                         help='use thrift or not')
+    parser.add_argument('--gcfg', dest='gcfg',
+                        metavar='GMONDCFG', default='/usr/local/etc/gmond.cfg',
+                        help='gmond location')
 
     args = parser.parse_args()
 
@@ -40,14 +47,26 @@ def main():
         from thrift.protocol import TBinaryProtocol
         from thrift.server import TNonblockingServer
 
-        handler = LogCollectorHandler()
+        perf_rec_queue = Queue.Queue()
+        handler = LogCollectorHandler(perf_rec_queue=perf_rec_queue)
+
         processor = LogCollector.Processor(handler)
         transport = TSocket.TServerSocket(host=args.host, port=args.port) \
             if args.port else TSocket.TServerSocket(unix_socket=args.host)
         tfactory = TBinaryProtocol.TBinaryProtocolFactory()
         pfactory = TBinaryProtocol.TBinaryProtocolFactory()
-
         server = TNonblockingServer.TNonblockingServer(processor, transport, tfactory, pfactory)
+
+        collector = PerfCollector(perf_rec_queue, logger)
+        collector.setDaemon(True)
+        collector.start()
+
+        cfg_path = args.gcfg
+        interval = 60.0
+        sender = GMetricSender(collector, logger, interval, cfg_path) \
+            if cfg_path else PerfSender(collector, logger, interval)
+        sender.setDaemon(True)
+        sender.start()
 
         logger.info('Starting the server...')
         server.serve()

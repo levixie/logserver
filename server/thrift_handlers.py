@@ -7,9 +7,10 @@ from common import slogger
 
 
 class LogCollectorHandler(object):
-    def __init__(self, log_name=None, log_dir=None):
+    def __init__(self, log_name=None, log_dir=None, perf_rec_queue=None):
         self.log_name = log_name
         self.log_dir = log_dir
+        self.perf_rec_queue = perf_rec_queue
 
     def log(self, record):
         # if a name is specified, we use the named logger rather than the one
@@ -39,3 +40,7 @@ class LogCollectorHandler(object):
              'process': record.process}
         )
         cur_logger.handle(py_record)
+
+    def count(self, recs):
+        if self.perf_rec_queue:
+            self.perf_rec_queue.put_nowait(recs)

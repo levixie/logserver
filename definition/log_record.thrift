@@ -53,7 +53,7 @@ enum Operation {
  * manual management in some languages.
  */
 struct LogRecord {
-  1:string msg
+  1:string msg,
   2:optional string log_name,
   3:string name,
   4:i16 level,
@@ -64,6 +64,15 @@ struct LogRecord {
   9:optional string threadname,
   10:optional string processname,
   11:optional i64 process,
+}
+
+enum CounterType {
+  TOTAL = 1,
+  ERR = 2
+}
+struct CounterRecord {
+  1:string id,
+  2:CounterType type
 }
 
 /**
@@ -88,6 +97,8 @@ service LogCollector {
    */
 
    oneway void log(1:LogRecord rec)
+
+   oneway void count(1:list<CounterRecord> recs)
 
 }
 

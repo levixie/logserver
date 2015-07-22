@@ -34,6 +34,13 @@ class Iface(object):
     """
     pass
 
+  def count(self, recs):
+    """
+    Parameters:
+     - recs
+    """
+    pass
+
 
 class Client(Iface):
   """
@@ -65,12 +72,27 @@ class Client(Iface):
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
+  def count(self, recs):
+    """
+    Parameters:
+     - recs
+    """
+    self.send_count(recs)
+
+  def send_count(self, recs):
+    self._oprot.writeMessageBegin('count', TMessageType.ONEWAY, self._seqid)
+    args = count_args()
+    args.recs = recs
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
 
 class Processor(Iface, TProcessor):
   def __init__(self, handler):
     self._handler = handler
     self._processMap = {}
     self._processMap["log"] = Processor.process_log
+    self._processMap["count"] = Processor.process_count
 
   def process(self, iprot, oprot):
     (name, type, seqid) = iprot.readMessageBegin()
@@ -92,6 +114,13 @@ class Processor(Iface, TProcessor):
     args.read(iprot)
     iprot.readMessageEnd()
     self._handler.log(args.rec)
+    return
+
+  def process_count(self, seqid, iprot, oprot):
+    args = count_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    self._handler.count(args.recs)
     return
 
 
@@ -150,6 +179,80 @@ class log_args(object):
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.rec)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class count_args(object):
+  """
+  Attributes:
+   - recs
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.LIST, 'recs', (TType.STRUCT,(CounterRecord, CounterRecord.thrift_spec)), None, ), # 1
+  )
+
+  def __init__(self, recs=None,):
+    self.recs = recs
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.LIST:
+          self.recs = []
+          (_etype3, _size0) = iprot.readListBegin()
+          for _i4 in xrange(_size0):
+            _elem5 = CounterRecord()
+            _elem5.read(iprot)
+            self.recs.append(_elem5)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('count_args')
+    if self.recs is not None:
+      oprot.writeFieldBegin('recs', TType.LIST, 1)
+      oprot.writeListBegin(TType.STRUCT, len(self.recs))
+      for iter6 in self.recs:
+        iter6.write(oprot)
+      oprot.writeListEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.recs)
     return value
 
   def __repr__(self):
