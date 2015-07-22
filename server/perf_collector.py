@@ -35,17 +35,17 @@ class PerfSender(Thread):
         super(PerfSender, self).__init__()
         self.log = log or logger
         self.collector = collector
-        self.interval = interval * 1000
+        self.interval = interval
 
     def run(self):
         self.log.info("START of PerfSender::run")
         last_time = datetime.utcnow()
         while True:
             cur_time = datetime.utcnow()
-            diff_sec = (cur_time - last_time).microseconds
+            diff_sec = (cur_time - last_time).total_seconds()
             if diff_sec < self.interval:
-                time.sleep((self.interval - diff_sec) / 1000)
-            last_time = cur_time
+                time.sleep(self.interval - diff_sec)
+            last_time = datetime.utcnow()
             with _lock:
                 for name, counter in self.collector.counters.items():
                     self.send(name, counter)
@@ -61,4 +61,4 @@ class PerfSender(Thread):
                         self.collector.err_counters[name] = 0
 
     def send(self, name, counter):
-        self.log.info("{} is {}".format(name, 1000*counter/self.interval))
+        self.log.info("{} is {}".format(name, counter/self.interval))

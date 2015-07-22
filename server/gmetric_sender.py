@@ -10,7 +10,7 @@ class GMetricSender(PerfSender):
         self.metrics = get_gmetrics(cfg_path)
 
     def send(self, name, counter):
-        value = 1000*counter/self.interval
+        value = counter/self.interval
         group_name = ''
         if name.find('|') != -1:
             group_name, name = name.rsplit('|', 2)
