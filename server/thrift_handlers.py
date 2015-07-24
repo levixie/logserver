@@ -41,6 +41,6 @@ class LogCollectorHandler(object):
         )
         cur_logger.handle(py_record)
 
-    def count(self, recs):
+    def perf(self, recs):
         if self.perf_rec_queue:
             self.perf_rec_queue.put_nowait(recs)

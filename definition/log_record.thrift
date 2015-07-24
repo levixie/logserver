@@ -70,9 +70,11 @@ enum CounterType {
   TOTAL = 1,
   ERR = 2
 }
-struct CounterRecord {
+struct PerfRecord {
   1:string id,
   2:CounterType type
+  3:i32 times
+  4:optional list<double> period
 }
 
 /**
@@ -98,7 +100,7 @@ service LogCollector {
 
    oneway void log(1:LogRecord rec)
 
-   oneway void count(1:list<CounterRecord> recs)
+   oneway void perf(1:list<PerfRecord> recs)
 
 }
 

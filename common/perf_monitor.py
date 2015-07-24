@@ -2,12 +2,12 @@ __author__ = 'jesse'
 
 from contextlib import contextmanager
 import time
-from collections import defaultdict
+from datetime import datetime
 from thrift.transport import TSocket, TTransport
 from thrift.protocol import TBinaryProtocol
 
 from thrift_gen.log_record import LogCollector
-from thrift_gen.log_record.ttypes import LogRecord, CounterRecord, CounterType
+from thrift_gen.log_record.ttypes import PerfRecord, CounterType
 
 _Per_Monitor = None
 
@@ -64,33 +64,37 @@ class PerfMonitor(object):
                 self.retryTime = now + self.retryPeriod
 
     @contextmanager
-    def get_counter(self, counter_name=None):
+    def get_perf(self, perf_name=None, log_dur=True):
         counter = PerfCounter()
+        start_time = datetime.utcnow()
         try:
             yield counter
         finally:
             if self.client is None and self.host:
                 self.create_client()
 
+            if counter.start_time is None:
+                counter.dur_sec.append((datetime.utcnow() - start_time).total_seconds())
+            if not log_dur:
+                counter.dur_sec = []
+
             recs = []
             if counter.total:
-                recs.append(CounterRecord(counter_name, CounterType.TOTAL))
+                recs.append(PerfRecord(perf_name, CounterType.TOTAL, times=counter.total, period=counter.dur_sec))
             if counter.error:
-                recs.append(CounterRecord(counter_name, CounterType.ERR))
+                recs.append(PerfRecord(perf_name, CounterType.ERR, times=counter.error))
 
             if self.client is None:
                 return
 
             try:
-                self.client.count(recs)
+                self.client.perf(recs)
             except (OSError, TTransport.TTransportException) as err:
                 print err
                 self.client = None  # so we can call createSocket next time
                 self.transport.close()
             except Exception as err:
                 print err
-                if not hasattr(err, 'errno') or (err.errno != 32 and err.errno != 57):
-                    raise
                 self.client = None  # so we can call createSocket next time
                 self.transport.close()
 
@@ -99,9 +103,27 @@ class PerfCounter(object):
     def __init__(self):
         self._total = 0
         self._error = 0
+        self.start_time = None
+        self._dur_sec = []
 
     def count_total(self):
         self._total += 1
+
+    def start_period(self):
+        self.start_time = datetime.utcnow()
+
+    def end_period(self):
+        dur_sec = (datetime.utcnow() - self.start_time).total_seconds()
+        self._dur_sec.append(dur_sec)
+        self.start_time = datetime.utcnow()
+
+    @property
+    def dur_sec(self):
+        return self._dur_sec
+
+    @dur_sec.setter
+    def dur_sec(self, value):
+        self._dur_sec = value
 
     @property
     def total(self):
@@ -115,17 +137,23 @@ class PerfCounter(object):
         return self._error
 
 
-def get_perf_count(name):
+def get_perf_count(name, log_dur=True):
     def wrapper(func):
         def call(*args, **kwargs):
             if _Per_Monitor is None:
                 return func(*args, **kwargs)
-            with _Per_Monitor.get_counter(name) as counter:
+            with _Per_Monitor.get_perf(name, log_dur=log_dur) as counter:
                 try:
+                    counter.start_period()
                     counter.count_total()
                     return func(*args, **kwargs)
                 except:
                     counter.count_error()
                     raise
+                finally:
+                    counter.end_period()
         return call
     return wrapper
+
+def get_perf_count_without_dur(name):
+    return get_perf_count(name, log_dur=False)

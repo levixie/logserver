@@ -249,22 +249,28 @@ class LogRecord(object):
   def __ne__(self, other):
     return not (self == other)
 
-class CounterRecord(object):
+class PerfRecord(object):
   """
   Attributes:
    - id
    - type
+   - times
+   - period
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.STRING, 'id', None, None, ), # 1
     (2, TType.I32, 'type', None, None, ), # 2
+    (3, TType.I32, 'times', None, None, ), # 3
+    (4, TType.LIST, 'period', (TType.DOUBLE,None), None, ), # 4
   )
 
-  def __init__(self, id=None, type=None,):
+  def __init__(self, id=None, type=None, times=None, period=None,):
     self.id = id
     self.type = type
+    self.times = times
+    self.period = period
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -285,6 +291,21 @@ class CounterRecord(object):
           self.type = iprot.readI32();
         else:
           iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.I32:
+          self.times = iprot.readI32();
+        else:
+          iprot.skip(ftype)
+      elif fid == 4:
+        if ftype == TType.LIST:
+          self.period = []
+          (_etype3, _size0) = iprot.readListBegin()
+          for _i4 in xrange(_size0):
+            _elem5 = iprot.readDouble();
+            self.period.append(_elem5)
+          iprot.readListEnd()
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -294,7 +315,7 @@ class CounterRecord(object):
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('CounterRecord')
+    oprot.writeStructBegin('PerfRecord')
     if self.id is not None:
       oprot.writeFieldBegin('id', TType.STRING, 1)
       oprot.writeString(self.id)
@@ -302,6 +323,17 @@ class CounterRecord(object):
     if self.type is not None:
       oprot.writeFieldBegin('type', TType.I32, 2)
       oprot.writeI32(self.type)
+      oprot.writeFieldEnd()
+    if self.times is not None:
+      oprot.writeFieldBegin('times', TType.I32, 3)
+      oprot.writeI32(self.times)
+      oprot.writeFieldEnd()
+    if self.period is not None:
+      oprot.writeFieldBegin('period', TType.LIST, 4)
+      oprot.writeListBegin(TType.DOUBLE, len(self.period))
+      for iter6 in self.period:
+        oprot.writeDouble(iter6)
+      oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
@@ -314,6 +346,8 @@ class CounterRecord(object):
     value = 17
     value = (value * 31) ^ hash(self.id)
     value = (value * 31) ^ hash(self.type)
+    value = (value * 31) ^ hash(self.times)
+    value = (value * 31) ^ hash(self.period)
     return value
 
   def __repr__(self):

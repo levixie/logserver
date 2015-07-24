@@ -9,15 +9,27 @@ class GMetricSender(PerfSender):
         super(GMetricSender, self).__init__(collector, log, interval)
         self.metrics = get_gmetrics(cfg_path)
 
-    def send(self, name, counter):
+    def send_counter(self, name, counter):
         value = counter/self.interval
         group_name = ''
         if name.find('|') != -1:
             group_name, name = name.rsplit('|', 2)
         count_name = "{}_hits".format(name)
-        self.log.info("group:{} name:{} value:{}".format(group_name, count_name, value))
+        self.log.info("group:{} name:{}_hits value:{}".format(group_name, count_name, value))
 
         for metric in self.metrics:
             metric.send(count_name, value,
-                        TYPE='float', UNITS='count',
-                        GROUP=group_name, DMAX=3600)
+                        TYPE='float', UNITS='hps',
+                        GROUP=group_name, DMAX=60)
+
+    def send_period(self, name, times, dur_period):
+        value = dur_period / times
+        group_name = ''
+        if name.find('|') != -1:
+            group_name, name = name.rsplit('|', 2)
+        count_name = "{}_dur".format(name)
+        self.log.info("group:{} name:{}_dur value:{}".format(group_name, count_name, value))
+        for metric in self.metrics:
+            metric.send(count_name, value,
+                        TYPE='float', UNITS='sec',
+                        GROUP=group_name, DMAX=60)

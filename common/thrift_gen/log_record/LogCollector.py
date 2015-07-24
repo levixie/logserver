@@ -34,7 +34,7 @@ class Iface(object):
     """
     pass
 
-  def count(self, recs):
+  def perf(self, recs):
     """
     Parameters:
      - recs
@@ -72,16 +72,16 @@ class Client(Iface):
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
     self._oprot.trans.flush()
-  def count(self, recs):
+  def perf(self, recs):
     """
     Parameters:
      - recs
     """
-    self.send_count(recs)
+    self.send_perf(recs)
 
-  def send_count(self, recs):
-    self._oprot.writeMessageBegin('count', TMessageType.ONEWAY, self._seqid)
-    args = count_args()
+  def send_perf(self, recs):
+    self._oprot.writeMessageBegin('perf', TMessageType.ONEWAY, self._seqid)
+    args = perf_args()
     args.recs = recs
     args.write(self._oprot)
     self._oprot.writeMessageEnd()
@@ -92,7 +92,7 @@ class Processor(Iface, TProcessor):
     self._handler = handler
     self._processMap = {}
     self._processMap["log"] = Processor.process_log
-    self._processMap["count"] = Processor.process_count
+    self._processMap["perf"] = Processor.process_perf
 
   def process(self, iprot, oprot):
     (name, type, seqid) = iprot.readMessageBegin()
@@ -116,11 +116,11 @@ class Processor(Iface, TProcessor):
     self._handler.log(args.rec)
     return
 
-  def process_count(self, seqid, iprot, oprot):
-    args = count_args()
+  def process_perf(self, seqid, iprot, oprot):
+    args = perf_args()
     args.read(iprot)
     iprot.readMessageEnd()
-    self._handler.count(args.recs)
+    self._handler.perf(args.recs)
     return
 
 
@@ -192,7 +192,7 @@ class log_args(object):
   def __ne__(self, other):
     return not (self == other)
 
-class count_args(object):
+class perf_args(object):
   """
   Attributes:
    - recs
@@ -200,7 +200,7 @@ class count_args(object):
 
   thrift_spec = (
     None, # 0
-    (1, TType.LIST, 'recs', (TType.STRUCT,(CounterRecord, CounterRecord.thrift_spec)), None, ), # 1
+    (1, TType.LIST, 'recs', (TType.STRUCT,(PerfRecord, PerfRecord.thrift_spec)), None, ), # 1
   )
 
   def __init__(self, recs=None,):
@@ -218,11 +218,11 @@ class count_args(object):
       if fid == 1:
         if ftype == TType.LIST:
           self.recs = []
-          (_etype3, _size0) = iprot.readListBegin()
-          for _i4 in xrange(_size0):
-            _elem5 = CounterRecord()
-            _elem5.read(iprot)
-            self.recs.append(_elem5)
+          (_etype10, _size7) = iprot.readListBegin()
+          for _i11 in xrange(_size7):
+            _elem12 = PerfRecord()
+            _elem12.read(iprot)
+            self.recs.append(_elem12)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -235,12 +235,12 @@ class count_args(object):
     if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
       oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
       return
-    oprot.writeStructBegin('count_args')
+    oprot.writeStructBegin('perf_args')
     if self.recs is not None:
       oprot.writeFieldBegin('recs', TType.LIST, 1)
       oprot.writeListBegin(TType.STRUCT, len(self.recs))
-      for iter6 in self.recs:
-        iter6.write(oprot)
+      for iter13 in self.recs:
+        iter13.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
